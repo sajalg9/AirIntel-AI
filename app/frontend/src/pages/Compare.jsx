@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Spinner, ErrorBox, SectionHeader, getAQILevel } from '../components/AQIUtils'
-
-const API = '/api'
+import { apiUrl } from '../lib/api'
 const CITIES = ['Delhi', 'Mumbai', 'Bangalore', 'Hyderabad', 'Chennai']
 
 export default function Compare() {
@@ -25,7 +24,7 @@ export default function Compare() {
     setLoading(true)
     setError(null)
     try {
-      const res = await axios.get(`${API}/compare?cities=${[...selected].join(',')}`)
+      const res = await axios.get(apiUrl(`/compare?cities=${[...selected].join(',')}`))
       setData(res.data.comparison)
     } catch (e) {
       setError(e.message)

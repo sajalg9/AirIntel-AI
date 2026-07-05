@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ResponsiveContainer } from 'recharts'
 import { CitySelect, Spinner, ErrorBox, SectionHeader } from '../components/AQIUtils'
-
-const API = '/api'
+import { apiUrl } from '../lib/api'
 const COLORS = ['#00b4d8','#a78bfa','#fb7185','#fb923c','#34d399','#fbbf24']
 
 export default function Explain() {
@@ -15,7 +14,7 @@ export default function Explain() {
   async function fetchExplain(c) {
     setLoading(true); setError(null)
     try {
-      const res = await axios.get(`${API}/explain/${c}`)
+      const res = await axios.get(apiUrl(`/explain/${c}`))
       setData(res.data)
     } catch(e) { setError(e.message) }
     finally { setLoading(false) }

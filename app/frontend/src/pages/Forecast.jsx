@@ -5,8 +5,7 @@ import {
   Tooltip, Legend, ReferenceLine, ResponsiveContainer, Brush
 } from 'recharts'
 import { CitySelect, Spinner, ErrorBox, SectionHeader, getAQILevel } from '../components/AQIUtils'
-
-const API = '/api'
+import { apiUrl } from '../lib/api'
 
 const MODEL_OPTIONS = [
   { value: 'lstm', label: 'LSTM' },
@@ -43,10 +42,10 @@ export default function Forecast() {
   async function fetchForecast() {
     setLoading(true); setError(null)
     try {
-      const r1 = await axios.post(`${API}/forecast`, { city, days_ahead: days, model })
+      const r1 = await axios.post(apiUrl('/forecast'), { city, days_ahead: days, model })
       setData(r1.data)
       try {
-        const r2 = await axios.post(`${API}/forecast`, { city, days_ahead: days, model: model2 })
+        const r2 = await axios.post(apiUrl('/forecast'), { city, days_ahead: days, model: model2 })
         setData2(r2.data)
       } catch { setData2(null) }
     } catch (e) { setError(e.message) }

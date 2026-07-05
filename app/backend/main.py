@@ -9,6 +9,7 @@ from __future__ import annotations
 import sys
 import os
 from pathlib import Path
+import uvicorn
 
 # ── path setup ──────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parents[2]   # AirSense-AI/
@@ -299,3 +300,8 @@ def post_advisory(req: AdvisoryRequest):
 @app.get("/health")
 def health():
     return {"status": "ok", "models_loaded": True}
+
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("app.backend.main:app", host="0.0.0.0", port=port, reload=False)

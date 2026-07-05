@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { AQICard, CitySelect, Spinner, ErrorBox, getAQILevel } from '../components/AQIUtils'
-
-const API = '/api'
+import { apiUrl } from '../lib/api'
 
 const POLLUTANT_META = {
   'PM2.5': { color: '#0091D5', icon: '💨', desc: 'Fine particles'  },
@@ -36,8 +35,8 @@ export default function Home() {
     setLoading(true); setError(null)
     try {
       const [cur, fcast] = await Promise.all([
-        axios.get(`${API}/current/${c}`),
-        axios.post(`${API}/forecast`, { city: c, days_ahead: 3, model: 'random_forest' })
+        axios.get(apiUrl(`/current/${c}`)),
+        axios.post(apiUrl('/forecast'), { city: c, days_ahead: 3, model: 'random_forest' })
       ])
       setCurrent(cur.data); setFcast(fcast.data)
     } catch(e) { setError(e.message) }

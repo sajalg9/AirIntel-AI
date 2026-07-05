@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { CitySelect, Spinner, ErrorBox, SectionHeader, getAQILevel } from '../components/AQIUtils'
-
-const API = '/api'
+import { apiUrl } from '../lib/api'
 
 // Indic language advisory templates (IndicTrans2/MuRIL used for production translation)
 const INDIC_ADVISORY = {
@@ -65,7 +64,7 @@ export default function Advisory() {
   async function fetchAdvisory(c) {
     setLoading(true); setError(null)
     try {
-      const res = await axios.post(`${API}/advisory`, { city: c, model: 'random_forest' })
+      const res = await axios.post(apiUrl('/advisory'), { city: c, model: 'random_forest' })
       setData(res.data)
     } catch(e) { setError(e.message) }
     finally { setLoading(false) }
