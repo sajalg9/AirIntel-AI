@@ -84,28 +84,31 @@ def _predict_aqi(city: str, model_name: str = "random_forest") -> float:
 
 def _iterative_forecast(city: str, days: int, model_name: str = "lstm") -> list[float]:
     """
-    Multi-step forecast: predict day+1, slide window, predict day+2, etc.
-    Non-AQI features are held constant at their last known values.
+    Lightweight trend forecast for Render free tier.
+    Uses recent AQI movement instead of loading ML models.
     """
-    window_2d, _ = latest_sequence_for_city(df_all, artifacts, city)
-    window = window_2d.copy()   # (14, 12)
-    aqi_col = artifacts.feature_columns.index("AQI")
-    preds   = []
+    city_df = df_all[df_all["City"] == city].sort_values("Date")
+
+    recent = city_df["AQI"].tail(7).values
+
+    current = float(recent[-1])
+
+    if len(recent) >= 2:
+        trend = (recent[-1] - recent[0]) / len(recent)
+    else:
+        trend = 0
+
+    preds = []
+
+    value = current
 
     for _ in range(days):
-        w3d   = window[np.newaxis, :, :]
-        flat  = flatten_windows(w3d)
+        value += trend
 
-        # lightweight fallback prediction
-        scaled = window[-1][aqi_col]
+        # small realistic smoothing
+        value = 0.8 * value + 0.2 * current
 
-        aqi_raw = float(artifacts.target_scaler.inverse_transform([[scaled]])[0][0])
-        preds.append(round(aqi_raw, 1))
-
-        # Slide: drop oldest row, append copy of last row with predicted AQI
-        new_row           = window[-1].copy()
-        new_row[aqi_col]  = float(scaled)   # replace AQI with predicted (scaled)
-        window            = np.vstack([window[1:], new_row[np.newaxis, :]])
+        preds.append(round(value, 1))
 
     return preds
 
