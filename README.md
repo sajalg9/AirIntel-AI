@@ -103,10 +103,11 @@ Provides percentage-based pollutant contribution insights.
 
 Generates pollution-aware recommendations:
 
-- Risk assessment
-- Health warnings
-- Preventive measures
+- Risk assessment based on AQI severity
+- Health warnings and safety guidance
+- Preventive measures for citizens
 - Pollution control suggestions
+- Multilingual Indic alerts (Hindi, Marathi, Kannada, Tamil, Telugu)
 
 
 ---
@@ -134,7 +135,6 @@ Insights + Recommendations
 Models experimented:
 
 - Random Forest
-- XGBoost
 - LSTM
 - Transformer-based forecasting
 
@@ -246,57 +246,6 @@ AirIntel-AI/
 └── README.md
 ```
 
-
----
-
-# 🚀 Running Locally
-
-
-## Clone Repository
-
-```bash
-git clone https://github.com/sajalg9/AirIntel-AI.git
-
-cd AirIntel-AI
-```
-
-
----
-
-## Backend Setup
-
-```bash
-pip install -r requirements.txt
-
-uvicorn app.backend.main:app --reload
-```
-
-Backend runs at:
-
-```
-http://localhost:8000
-```
-
-
----
-
-## Frontend Setup
-
-```bash
-cd frontend
-
-npm install
-
-npm run dev
-```
-
-Frontend runs at:
-
-```
-http://localhost:5173
-```
-
-
 ---
 
 # 🌍 Future Improvements
@@ -308,22 +257,4 @@ http://localhost:5173
 - Mobile application
 
 
----
 
-# 👨‍💻 Developer
-
-Built by **Sajal Gupta**
-
-GitHub:  
-https://github.com/sajalg9
-
-
----
-
-# ⭐ Support
-
-If you like this project, consider giving the repository a ⭐.
-
-```
-AI for cleaner cities 🌱
-```
