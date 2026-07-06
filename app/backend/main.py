@@ -228,29 +228,30 @@ def get_explain(city: str):
 
     row = _get_latest_row(city)
 
+    # AQI influence weights (approx SHAP replacement)
     pollutants = {
-    "PM2.5": row["PM2.5"],
-    "PM10": row["PM10"],
-    "NO2": row["NO2"],
-    "SO2": row["SO2"],
-    "CO": row["CO"],
-    "O3": row["O3"],
-}
+        "PM2.5": row["PM2.5"] * 1.8,
+        "PM10": row["PM10"] * 1.5,
+        "NO2": row["NO2"] * 1.2,
+        "SO2": row["SO2"] * 0.8,
+        "CO": row["CO"] * 10,
+        "O3": row["O3"] * 1.0,
+    }
 
-    total = sum(pollutants.values()) or 1
+    total = sum(pollutants.values())
 
     contributions = {
-    k: round(v / total * 100, 1)
-    for k, v in pollutants.items()
-}
+        k: round(v / total * 100, 1)
+        for k, v in pollutants.items()
+    }
 
     dominant = max(contributions, key=contributions.get)
 
     return {
-        "city":          city,
+        "city": city,
         "contributions": contributions,
-        "dominant":      dominant,
-        "summary":       f"{dominant} is the dominant driver at {contributions[dominant]:.1f}%.",
+        "dominant": dominant,
+        "summary": f"{dominant} is the dominant driver at {contributions[dominant]}%.",
     }
 
 @app.post("/api/advisory")
