@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT))
 import joblib
 import numpy as np
 import pandas as pd
-import torch
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -31,7 +31,6 @@ from src.preprocessing import (
     PreprocessingArtifacts,
 )
 from src.agents.recommendation_agent import generate_recommendations
-from src.models.lstm import AQILSTMRegressor, predict_lstm
 
 # ── app setup ────────────────────────────────────────────────────────────────
 app = FastAPI(title="AirIntel AI", version="1.0.0")
@@ -50,7 +49,7 @@ DATA_DIR   = ROOT / "data" / "raw"
 # ── load artifacts at startup ─────────────────────────────────────────────────
 @app.on_event("startup")
 def load_artifacts():
-    global df_all, artifacts, rf_model, lstm_model, transformer_model
+    global df_all, artifacts
 
     # Raw data
     df_all = load_all_city_data(DATA_DIR)
@@ -59,22 +58,12 @@ def load_artifacts():
     artifacts = joblib.load(MODELS_DIR / "preprocessing.joblib")
 
     # Sklearn models
-    rf_model  = joblib.load(MODELS_DIR / "random_forest.joblib")
+    rf_model = None
     #xgb_model = joblib.load(MODELS_DIR / "xgboost.joblib")
 
-    # PyTorch LSTM
-    input_size  = len(artifacts.feature_columns)
-    lstm_model  = AQILSTMRegressor(input_size=input_size, hidden_size=64, num_layers=2)
-    lstm_model.load_state_dict(torch.load(MODELS_DIR / "lstm.pt", map_location="cpu"))
-    lstm_model.eval()
-
-    # PyTorch Transformer (same interface as LSTM via predict_lstm)
-    from src.models.transformer import AQITransformerRegressor
-    transformer_model = AQITransformerRegressor(input_size=input_size)
-    transformer_model.load_state_dict(
-        torch.load(MODELS_DIR / "transformer.pt", map_location="cpu")
-    )
-    transformer_model.eval()
+             # Disabled for Render free memory limit
+    lstm_model = None
+    transformer_model = None
 
     print("✅ Models loaded.")
 
@@ -86,14 +75,8 @@ def _predict_aqi(city: str, model_name: str = "random_forest") -> float:
     window_3d    = window_2d[np.newaxis, :, :]   # (1, 14, 12)
     flat         = flatten_windows(window_3d)     # (1, 168)
 
-    if model_name == "random_forest":
-        scaled = rf_model.predict(flat)
-    elif model_name == "lstm":
-        scaled = predict_lstm(lstm_model, window_3d)
-    elif model_name == "transformer":
-        scaled = predict_lstm(transformer_model, window_3d)
-    else:
-        raise ValueError(f"Unknown model: {model_name}")
+    # lightweight fallback prediction
+    scaled = [window_2d[-1][artifacts.feature_columns.index("AQI")]]
 
     aqi = float(artifacts.target_scaler.inverse_transform([[scaled[0]]])[0][0])
     return round(aqi, 1)
@@ -113,11 +96,8 @@ def _iterative_forecast(city: str, days: int, model_name: str = "lstm") -> list[
         w3d   = window[np.newaxis, :, :]
         flat  = flatten_windows(w3d)
 
-        if model_name in ("lstm", "transformer"):
-            mdl   = lstm_model if model_name == "lstm" else transformer_model
-            scaled = predict_lstm(mdl, w3d)[0]
-        else:
-            scaled = rf_model.predict(flat)[0]
+        # lightweight fallback prediction
+        scaled = window[-1][aqi_col]
 
         aqi_raw = float(artifacts.target_scaler.inverse_transform([[scaled]])[0][0])
         preds.append(round(aqi_raw, 1))
@@ -243,25 +223,24 @@ def get_explain(city: str):
     if city not in CITIES:
         raise HTTPException(404, f"City '{city}' not found.")
 
-    from src.explainability.shap_analysis import explain_tree_model
-    import json
+    row = _get_latest_row(city)
 
-    # Get THIS city's latest 14-day window only
-    window_2d, _ = latest_sequence_for_city(df_all, artifacts, city)
-    flat = flatten_windows(window_2d[np.newaxis, :, :])  # (1, 168)
+    pollutants = {
+    "PM2.5": row["PM2.5"],
+    "PM10": row["PM10"],
+    "NO2": row["NO2"],
+    "SO2": row["SO2"],
+    "CO": row["CO"],
+    "O3": row["O3"],
+}
 
-    feature_names = artifacts.feature_columns  # 12 base features
-    # Build lagged feature names matching training (lag_14_AQI, lag_13_AQI, ...)
-    from src.preprocessing import build_feature_names
-    lag_names = build_feature_names(artifacts.window_size, feature_names)
+    total = sum(pollutants.values()) or 1
 
-    result = explain_tree_model(rf_model, flat, lag_names)
-
-    # pollutant_contributions is already per-city since we passed only city's window
     contributions = {
-        d["feature"]: d["importance"]
-        for d in result.pollutant_contributions
-    }
+    k: round(v / total * 100, 1)
+    for k, v in pollutants.items()
+}
+
     dominant = max(contributions, key=contributions.get)
 
     return {
