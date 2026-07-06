@@ -228,14 +228,55 @@ def get_explain(city: str):
 
     row = _get_latest_row(city)
 
-    # AQI influence weights (approx SHAP replacement)
+    # city-specific lightweight SHAP replacement
+    city_weights = {
+        "Delhi": {
+            "PM2.5": 2.0,
+            "PM10": 1.7,
+            "NO2": 1.2,
+            "SO2": 0.7,
+            "CO": 8,
+            "O3": 0.8,
+        },
+        "Mumbai": {
+            "PM2.5": 1.2,
+            "PM10": 1.4,
+            "NO2": 1.8,
+            "SO2": 0.8,
+            "CO": 10,
+            "O3": 1.0,
+        },
+        "Bangalore": {
+            "PM2.5": 1.0,
+            "PM10": 1.2,
+            "NO2": 1.1,
+            "SO2": 0.7,
+            "CO": 8,
+            "O3": 2.0,
+        },
+        "Hyderabad": {
+            "PM2.5": 1.4,
+            "PM10": 1.5,
+            "NO2": 1.1,
+            "SO2": 1.6,
+            "CO": 8,
+            "O3": 0.9,
+        },
+        "Chennai": {
+            "PM2.5": 1.1,
+            "PM10": 1.3,
+            "NO2": 1.0,
+            "SO2": 0.8,
+            "CO": 8,
+            "O3": 1.8,
+        },
+    }
+
+    weights = city_weights[city]
+
     pollutants = {
-        "PM2.5": row["PM2.5"] * 1.8,
-        "PM10": row["PM10"] * 1.5,
-        "NO2": row["NO2"] * 1.2,
-        "SO2": row["SO2"] * 0.8,
-        "CO": row["CO"] * 10,
-        "O3": row["O3"] * 1.0,
+        k: row[k] * weights[k]
+        for k in ["PM2.5","PM10","NO2","SO2","CO","O3"]
     }
 
     total = sum(pollutants.values())
