@@ -50,7 +50,7 @@ DATA_DIR   = ROOT / "data" / "raw"
 # ── load artifacts at startup ─────────────────────────────────────────────────
 @app.on_event("startup")
 def load_artifacts():
-    global df_all, artifacts, rf_model, xgb_model, lstm_model, transformer_model
+    global df_all, artifacts, rf_model, lstm_model, transformer_model
 
     # Raw data
     df_all = load_all_city_data(DATA_DIR)
@@ -60,7 +60,7 @@ def load_artifacts():
 
     # Sklearn models
     rf_model  = joblib.load(MODELS_DIR / "random_forest.joblib")
-    xgb_model = joblib.load(MODELS_DIR / "xgboost.joblib")
+    #xgb_model = joblib.load(MODELS_DIR / "xgboost.joblib")
 
     # PyTorch LSTM
     input_size  = len(artifacts.feature_columns)
@@ -88,8 +88,6 @@ def _predict_aqi(city: str, model_name: str = "random_forest") -> float:
 
     if model_name == "random_forest":
         scaled = rf_model.predict(flat)
-    elif model_name == "xgboost":
-        scaled = xgb_model.predict(flat)
     elif model_name == "lstm":
         scaled = predict_lstm(lstm_model, window_3d)
     elif model_name == "transformer":
